@@ -1,52 +1,50 @@
 import { z } from 'zod';
 import { createValidator } from '@/modules/core/validators';
 
-// Phone number input validation
+// Define the schema for the phone number input
 export const phoneNumberInputSchema = z.object({
-  phoneNumber: z.string().min(1, 'Phone number is required')
+  phoneNumber: z.string().min(1, "Phone number is required")
 });
 
-export const validatePhoneNumberInput = createValidator(
-  phoneNumberInputSchema, 
-  'PhoneNumberInput'
-);
+// Define the schema for phone number validation errors
+export const phoneErrorSchema = z.object({
+  error: z.string(),
+  message: z.string().optional(),
+  details: z.any().optional(),
+  setupRequired: z.boolean().optional(),
+  setupType: z.enum(['missing_key', 'invalid_key']).optional()
+});
 
-// Phone number result validation
+// Define the schema for successful response from the Abstract API
 export const phoneNumberResultSchema = z.object({
-  valid: z.boolean().optional(),
-  phone: z.string().optional(),
+  phone: z.string(),
+  valid: z.boolean(),
   format: z.object({
     international: z.string().optional(),
     local: z.string().optional()
   }).optional(),
-  country: z.union([
-    z.object({
-      name: z.string().optional(),
-      code: z.string().optional()
-    }),
-    z.string()
-  ]).optional(),
-  country_code: z.string().optional(),
-  location: z.string().optional(),
-  carrier: z.string().optional(),
-  line_type: z.union([z.string(), z.null()]).optional(),
-  type: z.string().optional()
-});
+  country: z.object({
+    code: z.string().optional(),
+    name: z.string().optional(),
+    prefix: z.string().optional()
+  }).optional(),
+  location: z.string().optional().nullable(),
+  carrier: z.string().optional().nullable(),
+  type: z.string().optional().nullable()
+}).or(phoneErrorSchema);
+
+// Create validator functions
+export const validatePhoneNumberInput = createValidator(
+  phoneNumberInputSchema,
+  'PhoneNumberInput'
+);
 
 export const validatePhoneNumberResult = createValidator(
-  phoneNumberResultSchema, 
+  phoneNumberResultSchema,
   'PhoneNumberResult'
 );
 
-// Error schema
-export const errorSchema = z.object({
-  error: z.string(),
-  message: z.string().optional(),
-  setupRequired: z.boolean().optional(),
-  details: z.any().optional()
-});
-
 export const validateError = createValidator(
-  errorSchema, 
-  'Error'
+  phoneErrorSchema,
+  'PhoneNumberError'
 );

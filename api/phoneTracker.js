@@ -32,10 +32,12 @@ export default async function handler(req, res) {
       return res.status(500).json({ 
         error: 'Configuration error',
         message: 'Missing API key configuration. Please check the README for instructions on how to obtain and set up your Abstract API key.',
-        setupRequired: true
+        setupRequired: true,
+        setupType: 'missing_key'
       });
     }
 
+    console.log(`Making request to Abstract API with phone: ${phoneNumber}`);
     const response = await axios.get('https://phonevalidation.abstractapi.com/v1/', {
       params: {
         api_key: apiKey,
@@ -48,32 +50,39 @@ export default async function handler(req, res) {
     return res.status(200).json(response.data);
   } catch (error) {
     console.error('Error fetching phone data:', error.message);
+    console.error('Error details:', error.response?.data || 'No response data');
+    console.error('Error status:', error.response?.status || 'No status code');
     
     // Check for API key related errors from the upstream service
     const isApiKeyError = error.response?.data?.error?.code === 401 || 
                           error.response?.status === 401 ||
-                          error.message.includes('api_key');
+                          (error.message && error.message.includes('api_key'));
     
     if (isApiKeyError) {
-      Sentry.captureException(error, {
+      const errorMessage = 'Invalid or expired Abstract API key';
+      console.error(errorMessage);
+      Sentry.captureException(new Error(errorMessage), {
         extra: {
           phoneNumber,
           errorDetails: error.response?.data || error.message,
-          errorType: 'API Key Error'
+          errorType: 'API Key Error',
+          statusCode: error.response?.status
         }
       });
       
       return res.status(401).json({
         error: 'Invalid API key',
         message: 'The provided API key for Abstract API is invalid or has expired. Please check your API key configuration.',
-        setupRequired: true
+        setupRequired: true,
+        setupType: 'invalid_key'
       });
     }
     
     Sentry.captureException(error, {
       extra: {
         phoneNumber,
-        errorDetails: error.response?.data || error.message
+        errorDetails: error.response?.data || error.message,
+        statusCode: error.response?.status
       }
     });
     
