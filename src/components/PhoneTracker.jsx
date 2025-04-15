@@ -12,6 +12,7 @@ const PhoneTracker = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [setupRequired, setSetupRequired] = useState(false);
 
   const validateNumber = (number) => {
     if (!number) return false;
@@ -31,6 +32,7 @@ const PhoneTracker = () => {
   const handleSearch = async (e) => {
     e.preventDefault();
     setError(null);
+    setSetupRequired(false);
     
     const isValid = validateNumber(phoneNumber);
     if (!isValid) {
@@ -56,6 +58,9 @@ const PhoneTracker = () => {
       const data = await response.json();
       
       if (!response.ok) {
+        if (data.setupRequired) {
+          setSetupRequired(true);
+        }
         throw new Error(data.message || data.error || 'Failed to fetch phone data');
       }
 
@@ -67,11 +72,7 @@ const PhoneTracker = () => {
         extra: { phoneNumber }
       });
       
-      if (error.message.includes('Configuration error')) {
-        setError('Server configuration issue. Please contact the administrator.');
-      } else {
-        setError(error.message || 'Something went wrong. Please try again.');
-      }
+      setError(error.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -89,7 +90,12 @@ const PhoneTracker = () => {
           loading={loading}
         />
         
-        {error && <ErrorMessage message={error} />}
+        {error && (
+          <ErrorMessage 
+            message={error} 
+            setupRequired={setupRequired}
+          />
+        )}
       </div>
 
       {searched && (
@@ -107,6 +113,25 @@ const PhoneTracker = () => {
             <p className="text-center text-orange-700">No results found for this number.</p>
           </div>
         )
+      )}
+
+      {setupRequired && (
+        <div className="card mt-4 bg-yellow-50 border-2 border-yellow-400">
+          <h3 className="text-lg font-semibold text-yellow-800 mb-2">API Key Required</h3>
+          <p className="text-yellow-800 mb-2">
+            This app requires an API key from Abstract API to function. The key hasn't been configured yet.
+          </p>
+          <h4 className="font-medium text-yellow-800 mt-3 mb-1">How to set up your API key:</h4>
+          <ol className="list-decimal list-inside text-yellow-800 space-y-1">
+            <li>Visit <a href="https://www.abstractapi.com/api/phone-validation-api" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">Abstract API</a> and create an account</li>
+            <li>Get your API key from the Phone Validation API section</li>
+            <li>Add your key to the .env file as <code className="bg-yellow-100 px-2 py-1 rounded">ABSTRACT_API_KEY=your_key_here</code></li>
+            <li>Restart the application</li>
+          </ol>
+          <p className="text-yellow-800 mt-3">
+            For more details, please check the README file.
+          </p>
+        </div>
       )}
 
       <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-100">

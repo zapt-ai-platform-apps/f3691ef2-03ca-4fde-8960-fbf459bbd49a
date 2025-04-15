@@ -22,10 +22,17 @@ export default async function handler(req, res) {
     if (!apiKey) {
       const errorMessage = 'Missing ABSTRACT_API_KEY environment variable. Please add your Abstract API key to the .env file.';
       console.error(errorMessage);
-      Sentry.captureException(new Error(errorMessage));
+      Sentry.captureException(new Error(errorMessage), {
+        extra: {
+          requestedPhoneNumber: phoneNumber,
+          errorType: 'Configuration Error',
+          missingKey: 'ABSTRACT_API_KEY'
+        }
+      });
       return res.status(500).json({ 
         error: 'Configuration error',
-        message: 'The server is missing required configuration. Please contact the administrator or check the README for setup instructions.'
+        message: 'Missing API key configuration. Please check the README for instructions on how to obtain and set up your Abstract API key.',
+        setupRequired: true
       });
     }
 
@@ -41,6 +48,28 @@ export default async function handler(req, res) {
     return res.status(200).json(response.data);
   } catch (error) {
     console.error('Error fetching phone data:', error.message);
+    
+    // Check for API key related errors from the upstream service
+    const isApiKeyError = error.response?.data?.error?.code === 401 || 
+                          error.response?.status === 401 ||
+                          error.message.includes('api_key');
+    
+    if (isApiKeyError) {
+      Sentry.captureException(error, {
+        extra: {
+          phoneNumber,
+          errorDetails: error.response?.data || error.message,
+          errorType: 'API Key Error'
+        }
+      });
+      
+      return res.status(401).json({
+        error: 'Invalid API key',
+        message: 'The provided API key for Abstract API is invalid or has expired. Please check your API key configuration.',
+        setupRequired: true
+      });
+    }
+    
     Sentry.captureException(error, {
       extra: {
         phoneNumber,

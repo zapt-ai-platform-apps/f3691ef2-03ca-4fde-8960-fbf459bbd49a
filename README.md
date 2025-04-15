@@ -46,23 +46,39 @@ A web application that allows users to track the location and other details of a
 
 ## Obtaining an Abstract API Key
 
-1. Visit [Abstract API](https://www.abstractapi.com/api/phone-validation-api) and sign up for an account
-2. Navigate to the Phone Validation API section
-3. Copy your API key from the dashboard
-4. Paste the key in your `.env` file as `ABSTRACT_API_KEY=your_api_key_here`
+This application requires an API key from Abstract API to function. Without this key, you'll receive an error message when trying to look up phone numbers.
+
+### Step-by-Step Guide to Get Your API Key:
+
+1. Visit [Abstract API's Phone Validation API](https://www.abstractapi.com/api/phone-validation-api)
+2. Create an account or sign in to your existing account
+3. After signing in, you'll be directed to your dashboard
+4. Find the Phone Validation API section and locate your API key
+5. Copy your API key
+
+### Adding Your API Key to the Application:
+
+1. Open the `.env` file in the root directory of the project
+2. Add your API key as follows:
+   ```
+   ABSTRACT_API_KEY=your_api_key_here
+   ```
+   Replace `your_api_key_here` with the actual API key you copied
+3. Save the file
+4. Restart your development server or redeploy your application
+
+### API Key Troubleshooting:
+
+If you encounter a "Configuration error" or "API key required" message in the application:
+
+1. Verify that your `.env` file exists in the project root
+2. Ensure the `ABSTRACT_API_KEY` variable is set correctly (no spaces around the equals sign)
+3. Check that the API key is valid and active in your Abstract API dashboard
+4. Make sure the application has been restarted after adding the key
 
 ## Deployment
 
 This application is configured for easy deployment on Vercel.
-
-## Troubleshooting
-
-### "Missing ABSTRACT_API_KEY environment variable"
-
-If you encounter this error, it means the application cannot find your Abstract API key. Make sure:
-1. You've created a `.env` file at the root of your project
-2. The file contains `ABSTRACT_API_KEY=your_api_key_here` (replace with your actual key)
-3. You've restarted your development server after adding the key
 
 ## Usage
 
