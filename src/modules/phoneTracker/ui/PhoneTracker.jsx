@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import React, { useState, useEffect } from 'react';
+import { eventBus } from '@/modules/core/events';
+import { events } from '../events';
+import { api } from '../api';
 import PhoneInput from './PhoneInput';
 import ResultCard from './ResultCard';
 import ErrorMessage from './ErrorMessage';
-import { trackPhoneSearch } from '../services/analytics';
 import * as Sentry from '@sentry/browser';
 
 const PhoneTracker = () => {
@@ -14,27 +15,38 @@ const PhoneTracker = () => {
   const [searched, setSearched] = useState(false);
   const [setupRequired, setSetupRequired] = useState(false);
 
-  const validateNumber = (number) => {
-    if (!number) return false;
-    
-    try {
-      const phoneNumber = parsePhoneNumberFromString(number);
-      return phoneNumber?.isValid() || false;
-    } catch (error) {
-      console.error('Error validating phone number:', error);
-      Sentry.captureException(error, {
-        extra: { phoneNumber: number }
-      });
-      return false;
-    }
-  };
+  useEffect(() => {
+    const searchCompletedListener = eventBus.subscribe(
+      events.PHONE_SEARCH_COMPLETED,
+      ({ result }) => {
+        setResult(result);
+        setError(null);
+        setLoading(false);
+      }
+    );
+
+    const searchFailedListener = eventBus.subscribe(
+      events.PHONE_SEARCH_FAILED,
+      ({ error, setupRequired }) => {
+        setError(error);
+        setSetupRequired(!!setupRequired);
+        setResult(null);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      searchCompletedListener();
+      searchFailedListener();
+    };
+  }, []);
 
   const handleSearch = async (e) => {
     e.preventDefault();
     setError(null);
     setSetupRequired(false);
     
-    const isValid = validateNumber(phoneNumber);
+    const isValid = api.validatePhoneNumber(phoneNumber);
     if (!isValid) {
       setError('Please enter a valid phone number with country code.');
       return;
@@ -45,27 +57,9 @@ const PhoneTracker = () => {
       setSearched(true);
       
       console.log('Searching for phone number:', phoneNumber);
-      trackPhoneSearch(phoneNumber);
       
-      const response = await fetch('/api/phoneTracker', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phoneNumber }),
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        if (data.setupRequired) {
-          setSetupRequired(true);
-        }
-        throw new Error(data.message || data.error || 'Failed to fetch phone data');
-      }
-
-      console.log('Phone data received:', data);
-      setResult(data);
+      await api.searchPhoneNumber(phoneNumber);
+      // Result and errors are handled by event listeners
     } catch (error) {
       console.error('Error during phone search:', error);
       Sentry.captureException(error, {
@@ -73,7 +67,6 @@ const PhoneTracker = () => {
       });
       
       setError(error.message || 'Something went wrong. Please try again.');
-    } finally {
       setLoading(false);
     }
   };

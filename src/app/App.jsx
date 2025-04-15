@@ -1,6 +1,6 @@
 import React from 'react';
-import PhoneTracker from './components/PhoneTracker';
-import Footer from './components/Footer';
+import PhoneTracker from '@/modules/phoneTracker/ui/PhoneTracker';
+import Footer from '@/modules/ui/shared/Footer';
 
 export default function App() {
   return (
