@@ -4,6 +4,7 @@ import PhoneInput from './PhoneInput';
 import ResultCard from './ResultCard';
 import ErrorMessage from './ErrorMessage';
 import { trackPhoneSearch } from '../services/analytics';
+import * as Sentry from '@sentry/browser';
 
 const PhoneTracker = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -20,6 +21,9 @@ const PhoneTracker = () => {
       return phoneNumber?.isValid() || false;
     } catch (error) {
       console.error('Error validating phone number:', error);
+      Sentry.captureException(error, {
+        extra: { phoneNumber: number }
+      });
       return false;
     }
   };
@@ -49,17 +53,25 @@ const PhoneTracker = () => {
         body: JSON.stringify({ phoneNumber }),
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch phone data');
+        throw new Error(data.message || data.error || 'Failed to fetch phone data');
       }
 
-      const data = await response.json();
       console.log('Phone data received:', data);
       setResult(data);
     } catch (error) {
       console.error('Error during phone search:', error);
-      setError(error.message || 'Something went wrong. Please try again.');
+      Sentry.captureException(error, {
+        extra: { phoneNumber }
+      });
+      
+      if (error.message.includes('Configuration error')) {
+        setError('Server configuration issue. Please contact the administrator.');
+      } else {
+        setError(error.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -105,6 +117,9 @@ const PhoneTracker = () => {
         </p>
         <p className="text-sm text-blue-800 mt-2">
           Note: The accuracy of results depends on the phone number's registration and may vary by country.
+        </p>
+        <p className="text-sm text-blue-800 mt-2">
+          <strong>Important:</strong> This service requires a valid API key. If you're experiencing issues, please make sure the API key is properly configured.
         </p>
       </div>
     </div>

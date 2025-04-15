@@ -20,7 +20,13 @@ export default async function handler(req, res) {
   try {
     const apiKey = process.env.ABSTRACT_API_KEY;
     if (!apiKey) {
-      throw new Error('Missing ABSTRACT_API_KEY environment variable');
+      const errorMessage = 'Missing ABSTRACT_API_KEY environment variable. Please add your Abstract API key to the .env file.';
+      console.error(errorMessage);
+      Sentry.captureException(new Error(errorMessage));
+      return res.status(500).json({ 
+        error: 'Configuration error',
+        message: 'The server is missing required configuration. Please contact the administrator or check the README for setup instructions.'
+      });
     }
 
     const response = await axios.get('https://phonevalidation.abstractapi.com/v1/', {

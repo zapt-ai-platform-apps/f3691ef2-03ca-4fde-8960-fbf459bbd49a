@@ -22,6 +22,7 @@ A web application that allows users to track the location and other details of a
 
 - Node.js
 - npm or yarn
+- Abstract API key (get one at [Abstract API](https://www.abstractapi.com/api/phone-validation-api))
 
 ### Installation
 
@@ -31,21 +32,37 @@ A web application that allows users to track the location and other details of a
    npm install
    ```
 3. Create a `.env` file with the following variables:
-   - ABSTRACT_API_KEY
-   - VITE_PUBLIC_APP_ID
-   - VITE_PUBLIC_APP_ENV
-   - VITE_PUBLIC_SENTRY_DSN
-   - VITE_PUBLIC_UMAMI_WEBSITE_ID
-   - SENTRY_AUTH_TOKEN
+   - `ABSTRACT_API_KEY`: Your API key from Abstract API's phone validation service
+   - `VITE_PUBLIC_APP_ID`: Your application ID
+   - `VITE_PUBLIC_APP_ENV`: Environment (development/production)
+   - `VITE_PUBLIC_SENTRY_DSN`: Sentry DSN for error tracking
+   - `VITE_PUBLIC_UMAMI_WEBSITE_ID`: Umami analytics ID
+   - `SENTRY_AUTH_TOKEN`: Sentry authentication token
 
 4. Run the development server:
    ```
    npm run dev
    ```
 
+## Obtaining an Abstract API Key
+
+1. Visit [Abstract API](https://www.abstractapi.com/api/phone-validation-api) and sign up for an account
+2. Navigate to the Phone Validation API section
+3. Copy your API key from the dashboard
+4. Paste the key in your `.env` file as `ABSTRACT_API_KEY=your_api_key_here`
+
 ## Deployment
 
 This application is configured for easy deployment on Vercel.
+
+## Troubleshooting
+
+### "Missing ABSTRACT_API_KEY environment variable"
+
+If you encounter this error, it means the application cannot find your Abstract API key. Make sure:
+1. You've created a `.env` file at the root of your project
+2. The file contains `ABSTRACT_API_KEY=your_api_key_here` (replace with your actual key)
+3. You've restarted your development server after adding the key
 
 ## Usage
 
